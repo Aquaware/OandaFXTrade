@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta, timezone
 import pytz
 import dateutil.parser
+from model.PriceDB import TableClass, TableClassWithTick
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -31,6 +33,22 @@ def gmt2Jst(gst_aware_time):
     jst_naive_time = datetime.utcfromtimestamp(jst_aware_time.timestamp)
     return (jst_aware_time, jst_naive_time)
 
+
+class CandleData(object):
+    def __init__(self, currency, timeframe):
+        self.currency = currency
+        self.timeframe = timeframe
+        self.table = TableClass(currency, timeframe)
+        self.candles = []
+
+    def loadData(self, limit=1000):
+        self.candles = self.table.allCandles(limit)
+        return self.candles
+
+    @property
+    def value(self):
+        return {'currency': self.currency, 'timeframe': self.timeframe, 'candles': [c.value for c in self.candles]}
+
 class Candle(object):
     def __init__(self, currency, timeframe, time, open, high, low, close, volume):
         self.currency = currency
@@ -41,6 +59,17 @@ class Candle(object):
         self.low = low
         self.close = close
         self.volume = volume
+
+    @property
+    def value(self):
+        return {
+            'time': self.time,
+            'open': self.open,
+            'close': self.close,
+            'high': self.high,
+            'low': self.low,
+            'volume': self.volume,
+        }
 
     @classmethod
     def parse(self, response):
@@ -63,7 +92,7 @@ class Candle(object):
         except:
             return None
 
-
+# ---------------------------
 
 class Tick(object):
     def __init__(self, currency, time, bid, ask, volume):

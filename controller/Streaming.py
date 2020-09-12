@@ -30,7 +30,7 @@ class Streaming(object):
         self.num_ranking = int(conf['trading']['num_ranking'])
         return
 
-    def stream(self):
+    def streaming(self):
         callback = partial(self.store)
         self.api.streamTick(callback, self.currency)
 

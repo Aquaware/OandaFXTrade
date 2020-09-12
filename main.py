@@ -9,7 +9,7 @@ from functools import partial
 from datetime import datetime
 from model.Prices import Tick
 from model.PriceDB import TableClassWithTick
-from Streaming import stream
+from controller.Streaming import stream
 
 class App(object):
     def __init__(self):
@@ -97,10 +97,23 @@ class App(object):
         TableClassWithTick('usd_jpy', 'M5', tick)
 
     def test9(self):
-        thread = Thread(target=stream.stream)
+        thread = Thread(target=stream.streaming)
+        thread.start()
+        thread.join()
+
+    def test10(self):
+        from model.Prices import CandleData
+        candleData = CandleData('USD_JPY', 'M5')
+        candles = candleData.loadData()
+        for candle in candles:
+            print(candle.time, candle.open, candle.close)
+
+    def test11(self):
+        from controller.HttpServer import start
+        thread = Thread(target=start)
         thread.start()
         thread.join()
 
 if __name__ == '__main__':
     app = App()
-    app.test9()
+    app.test11()
