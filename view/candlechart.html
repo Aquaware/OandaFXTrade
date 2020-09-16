@@ -67,6 +67,33 @@
             charts.push(mainChart);
             var options = mainChart.getOptions();
             var view = mainChart.getView();
+            for (var i = 0; i < 2; i++) {
+                options.series[i + 1] = {type: 'line'};
+                view.columns.push(6 + i);
+            }
+
+
+            if ($('#volume_div').length == 0) {
+                $('#technical_div').append(
+                            "<div id='volume_div' class='bottom_chart'>" +
+                            "<span class='technical_title'>Volume</span>" +
+                            "<div id='volume_chart'></div>" +
+                            "</div>")
+            }
+            var volumeChart = new google.visualization.ChartWrapper({
+                'chartType': 'ColumnChart',
+                'containerId': 'volume_chart',
+                'options': {
+                        'hAxis': {'slantedText': false},
+                        'legend': {'position': 'none'},
+                        'series': {}
+                },
+                'view': {
+                        'columns': [ { 'type': 'string' }, 5]
+                }
+            });
+            charts.push(volumeChart)
+
             var controlWrapper = new google.visualization.ControlWrapper({
                 'controlType': 'ChartRangeFilter',
                 'containerId': 'filter_div',
@@ -93,8 +120,57 @@
                 currency: config.candlestick.currency,
                 length: config.candlestick.length,
                 timeframe: config.candlestick.timeframe,
+                extra_size: 2,
+                extra:  [{number:1, method: 'sma', window:5},
+                        {number:2, method: 'sma', window:10}]
             }
-            $.get("/webapi/oandafx/", params).done(function (data) {
+            var jsono = JSON.stringify(params)
+            $.post("/webapi/oanda", params).done(function (data) {
+                var dataTable = new google.visualization.DataTable();
+                dataTable.addColumn('date', 'Date');
+                dataTable.addColumn('number', 'Low');
+                dataTable.addColumn('number', 'Open');
+                dataTable.addColumn('number', 'Close');
+                dataTable.addColumn('number', 'High');
+                dataTable.addColumn('number', 'Volume');
+                dataTable.addColumn('number', 'SMA5');
+                dataTable.addColumn('number', 'SMA10');
+
+                var googleChartData = [];
+                var candles = data["candles"];
+
+                for(var i=0; i < candles.length; i++){
+                    var candle = candles[i];
+                    var date = new Date(candle.time);
+                    var datas = [date, candle.low, candle.open, candle.close, candle.high, candle.volume];
+
+                    for(var j = 1; j <= 2; j++) {
+                        var sma = data[String(j)];
+                        var d = sma[i]
+                        if (d == 0.0) {
+                            datas.push(null);
+                        } else {
+                            datas.push(d);
+                        }
+                    }
+
+                    googleChartData.push(datas)
+                }
+                dataTable.addRows(googleChartData);
+                drawChart(dataTable);
+            })
+        }
+
+        function request2 () {
+            if (config.api.enable == false){
+                return
+            }
+            var params = {
+                currency: config.candlestick.currency,
+                length: config.candlestick.length,
+                timeframe: config.candlestick.timeframe,
+            }
+            $.get("/webapi/oandafx2/", params).done(function (data) {
                 var dataTable = new google.visualization.DataTable();
                 dataTable.addColumn('date', 'Date');
                 dataTable.addColumn('number', 'Low');
@@ -122,7 +198,7 @@
             request();
         }
 
-        setInterval(request, 1000 * 3)
+        setInterval(request, 1000)
         window.onload = function () {
             request()
             $('#dashboard_div').mouseenter(function() {
@@ -141,8 +217,16 @@
     <button onclick="changeTimeframe('M15');">M15</button>
 </div>
 
+<div>
+    SMA <input id="inputSma" type="checkbox">
+    Period<input id="inputSmaPeriod1" type="text" value="7" style="width: 15px;">
+    <input id="inputSmaPeriod2" type="text" value="14" style="width: 15px;">
+    <input id="inputSmaPeriod3" type="text" value="50" style="width: 15px;">
+</div>
+
 <div id="dashboard_div">
     <div id="chart_div"></div>
+    <div id="technical_div"></div>
     <div id="filter_div"></div>
 </div>
 

@@ -114,6 +114,15 @@ class App(object):
         thread.start()
         thread.join()
 
+    def test12(self):
+        from controller.HttpServer import start
+        thread1 = Thread(target=stream.streaming)
+        thread1.start()
+        thread2 = Thread(target=start)
+        thread2.start()
+        thread1.join()
+        thread2.join()
+
 if __name__ == '__main__':
     app = App()
-    app.test11()
+    app.test12()

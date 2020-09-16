@@ -33,6 +33,7 @@ def gmt2Jst(gst_aware_time):
     jst_naive_time = datetime.utcfromtimestamp(jst_aware_time.timestamp)
     return (jst_aware_time, jst_naive_time)
 
+# ------
 
 class CandleData(object):
     def __init__(self, currency, timeframe):
@@ -48,6 +49,8 @@ class CandleData(object):
     @property
     def value(self):
         return {'currency': self.currency, 'timeframe': self.timeframe, 'candles': [c.value for c in self.candles]}
+
+# -----
 
 class Candle(object):
     def __init__(self, currency, timeframe, time, open, high, low, close, volume):
